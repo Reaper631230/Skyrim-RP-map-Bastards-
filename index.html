@@ -289,19 +289,48 @@
       color: #6b3410;
     }
 
+    /* ============================================================
+       ФИЛЬТР
+       ============================================================ */
     .sidebar-widget .filter-section {
       padding: 10px 14px 12px;
       color: #f4e4bc;
       font-size: 13px;
     }
-    .sidebar-widget .filter-section h4 {
-      margin: 0 0 8px;
+
+    /* Кнопка сворачивания */
+    .sidebar-widget .filter-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
       color: #ffd700;
       font-size: 13px;
-      text-align: center;
       letter-spacing: 1px;
+      padding: 2px 0;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #8b6914;
+      padding-bottom: 5px;
     }
-    .sidebar-widget .filter-section label {
+    .sidebar-widget .filter-toggle .arrow {
+      font-size: 12px;
+      transition: transform 0.2s;
+      color: #b8860b;
+    }
+    .sidebar-widget .filter-toggle.collapsed .arrow {
+      transform: rotate(-90deg);
+    }
+
+    /* Тело фильтра — скрывается при сворачивании */
+    .sidebar-widget .filter-section.collapsed .filter-body {
+      display: none;
+    }
+    .sidebar-widget .filter-section.collapsed {
+      padding-bottom: 8px;
+    }
+
+    .sidebar-widget .filter-body label {
       display: flex;
       align-items: center;
       gap: 8px;
@@ -311,17 +340,17 @@
       transition: background 0.15s;
       user-select: none;
     }
-    .sidebar-widget .filter-section label:hover {
+    .sidebar-widget .filter-body label:hover {
       background: rgba(139, 105, 20, 0.3);
     }
-    .sidebar-widget .filter-section input[type="checkbox"] {
+    .sidebar-widget .filter-body input[type="checkbox"] {
       width: 16px;
       height: 16px;
       accent-color: #b8860b;
       cursor: pointer;
       flex-shrink: 0;
     }
-    .sidebar-widget .filter-section .icon {
+    .sidebar-widget .filter-body .icon {
       width: 18px;
       height: 18px;
       flex-shrink: 0;
@@ -330,25 +359,25 @@
       justify-content: center;
       font-size: 14px;
     }
-    .sidebar-widget .filter-section .icon img {
+    .sidebar-widget .filter-body .icon img {
       width: 100%;
       height: 100%;
       object-fit: contain;
     }
-    .sidebar-widget .filter-section .count {
+    .sidebar-widget .filter-body .count {
       margin-left: auto;
       font-size: 11px;
       opacity: 0.6;
       font-style: italic;
     }
-    .sidebar-widget .filter-section .filter-buttons {
+    .sidebar-widget .filter-body .filter-buttons {
       display: flex;
       gap: 6px;
       margin-top: 8px;
       padding-top: 8px;
       border-top: 1px solid #8b6914;
     }
-    .sidebar-widget .filter-section .filter-buttons button {
+    .sidebar-widget .filter-body .filter-buttons button {
       flex: 1;
       background: #6b3410;
       color: #f4e4bc;
@@ -360,7 +389,7 @@
       cursor: pointer;
       transition: background 0.15s;
     }
-    .sidebar-widget .filter-section .filter-buttons button:hover {
+    .sidebar-widget .filter-body .filter-buttons button:hover {
       background: #8b6914;
       color: #ffd700;
     }
@@ -376,9 +405,6 @@
     // ============================================================
     var W = 8192;
     var H = 8192;
-
-    var OLD_W = 1996;
-    var OLD_H = 1556;
 
     // ============================================================
     // 2. ИНИЦИАЛИЗАЦИЯ КАРТЫ
@@ -403,15 +429,13 @@
 
     // ============================================================
     // 3. СЛОЙ ГРАНИЦ ХОЛДОВ (holds.png)
-    // Прозрачный PNG с границами, нарисованный в Photopea.
-    // Лежит поверх карты, можно включать/выключать.
     // ============================================================
     var holdsLayer = L.imageOverlay('holds.png', bounds, {
       opacity: 0.9,
       interactive: false,
       zIndex: 500
     });
-    holdsLayer.addTo(map);   // показан по умолчанию
+    holdsLayer.addTo(map);
 
     map.fitBounds(bounds);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -421,131 +445,120 @@
     // ============================================================
     var cities = [
       // ================= ГОРОДА =================
-      { x: 1009, y: 850,  icon: 'icons/Whiterun.svg',    name: 'Вайтран',    type: 'Город',
-        desc: 'Центр Скайрима. Дом ярла Балгруфа.',
+      { x: 4449, y: 4193,  icon: 'icons/Whiterun.svg',    name: 'Вайтран',    type: 'Город',
+        desc: '',
         keys: ['дом', 'жилье', 'центр', 'балгруф', 'соратники', 'пшеница', 'равнина'] },
 
-      { x: 1515, y: 674,  icon: 'icons/Windhelm.svg',    name: 'Виндхельм',  type: 'Город',
+      { x: 6209, y: 3657,  icon: 'icons/Windhelm.svg',    name: 'Виндхельм',  type: 'Город',
         desc: 'Древний город на востоке. Оплот Братьев Бури.',
         keys: ['дом', 'жилье', 'восток', 'буря', 'ульфрик', 'древний', 'ярл'] },
 
-      { x: 96,   y: 810,  icon: 'icons/Markarth.svg',    name: 'Маркарт',    type: 'Город',
-        desc: 'Город в горах Друадах.',
+      { x: 1430, y: 4013,  icon: 'icons/Markarth.svg',    name: 'Маркарт',    type: 'Город',
+        desc: '',
         keys: ['дом', 'жилье', 'горы', 'друадах', 'шахта', 'серебро', 'сильверхенд'] },
 
-      { x: 1692, y: 1272, icon: 'icons/Riften.svg',      name: 'Рифтен',     type: 'Город',
-        desc: 'Осенний город у реки. Вотчина Мавен.',
+      { x: 6820, y: 5608,  icon: 'icons/Riften.svg',      name: 'Рифтен',     type: 'Город',
+        desc: '',
         keys: ['дом', 'жилье', 'река', 'мавен', 'осень', 'воры', 'гильдия воров'] },
 
-      { x: 784,  y: 1239, icon: 'icons/Falkreath.svg',   name: 'Фолкрит',    type: 'Город',
-        desc: 'Южный город, вотчина ярла Сиддгейра.',
+      { x: 3604, y: 5462,  icon: 'icons/Falkreath.svg',   name: 'Фолкрит',    type: 'Город',
+        desc: '',
         keys: ['дом', 'жилье', 'юг', 'сиддгейр', 'ярл', 'лес'] },
 
-      { x: 737,  y: 538,  icon: 'icons/Morthal.svg',     name: 'Морфал',     type: 'Город',
-        desc: 'Родина ярла Идгрод Чёрный Ручей.',
+      { x: 3493, y: 3094,  icon: 'icons/Morthal.svg',     name: 'Морфал',     type: 'Город',
+        desc: '',
         keys: ['дом', 'жилье', 'идгрод', 'ручей', 'ярл'] },
 
-      { x: 631,  y: 355,  icon: 'icons/Solitude.svg',    name: 'Солитьюд',   type: 'Город',
-        desc: 'Столица Скайрима, резиденция Верховного короля.',
+      { x: 3136, y: 2444,  icon: 'icons/Solitude.svg',    name: 'Солитьюд',   type: 'Город',
+        desc: '',
         keys: ['дом', 'жилье', 'столица', 'король', 'элисиф', 'империя', 'легион'] },
 
-      { x: 1066, y: 361,  icon: 'icons/Dawnstar.svg',    name: 'Данстар',    type: 'Город',
-        desc: 'Порт на северном побережье, шахтёрский город.',
+      { x: 4584, y: 2468,  icon: 'icons/Dawnstar.svg',    name: 'Данстар',    type: 'Город',
+        desc: '',
         keys: ['дом', 'жилье', 'порт', 'север', 'шахта', 'море', 'серебро'] },
 
-      { x: 1372, y: 369,  icon: 'icons/Winterhold.svg',  name: 'Винтерхолд', type: 'Город',
-        desc: 'Северо-восточный город, дом Коллегии магов.',
+      { x: 5811, y: 2506,  icon: 'icons/Winterhold.svg',  name: 'Винтерхолд', type: 'Город',
+        desc: '',
         keys: ['дом', 'жилье', 'магия', 'коллегия', 'маги', 'север', 'восток'] },
 
       // ================= ШАХТЫ =================
-      { x: 151,  y: 856,  icon: 'icons/mine.svg',         name: 'Левая рука',      type: 'Шахта',
+      { x: 1514,  y: 4095,  icon: 'icons/mine.svg',         name: 'Левая рука',      type: 'Шахта',
         desc: 'Железно-угольная шахта.',
         keys: ['руда', 'железо', 'уголь'] },
 
-      { x: 357,  y: 818,  icon: 'icons/mine.svg',         name: 'Логово Сольюнда', type: 'Шахта',
+      { x: 2151,  y: 3980,  icon: 'icons/mine.svg',         name: 'Логово Сольюнда', type: 'Шахта',
         desc: 'Шахта лунного камня.',
         keys: ['руда', 'лунный камень', 'копать', 'добыча', 'редкость'] },
 
-      { x: 219,  y: 777,  icon: 'icons/mine.svg',         name: 'Колскеггр',       type: 'Шахта',
+      { x: 1774,  y: 3861,  icon: 'icons/mine.svg',         name: 'Колскеггр',       type: 'Шахта',
         desc: 'Золотая шахта.',
         keys: ['руда', 'золото'] },
 
-      { x: 538,  y: 1021, icon: 'icons/mine.svg',         name: 'Желчная шахта',   type: 'Шахта',
+      { x: 3051,  y: 4822, icon: 'icons/mine.svg',         name: 'Желчная шахта',   type: 'Шахта',
         desc: 'Орихалковая шахта.',
         keys: ['руда', 'орихалк'] },
 
-      { x: 1529, y: 779,  icon: 'icons/mine.svg',         name: 'Горячий Пар',     type: 'Шахта',
+      { x: 6197, y: 3885,  icon: 'icons/mine.svg',         name: 'Горячий Пар',     type: 'Шахта',
         desc: 'Малахитово-угольная шахта.',
         keys: ['руда', 'малахит'] },
 
-      { x: 1466, y: 996,  icon: 'icons/mine.svg',         name: 'Черный брод',     type: 'Шахта',
+      { x: 6001, y: 4635,  icon: 'icons/mine.svg',         name: 'Черный брод',     type: 'Шахта',
         desc: 'Корундовая шахта.',
         keys: ['руда', 'корунд'] },
 
-      { x: 1575, y: 1047, icon: 'icons/mine.svg',         name: 'Северный ветер',  type: 'Шахта',
+      { x: 6398, y: 5667, icon: 'icons/mine.svg',         name: 'Северный ветер',  type: 'Шахта',
         desc: 'Железно-угольная шахта.',
         keys: ['руда', 'железо', 'уголь'] },
 
-      { x: 1628, y: 1132, icon: 'icons/mine.svg',         name: 'Камень Шора',     type: 'Шахта',
+      { x: 6605, y: 5031, icon: 'icons/mine.svg',         name: 'Камень Шора',     type: 'Шахта',
         desc: 'Эбонитово-угольная шахта.',
         keys: ['руда', 'эбонит', 'уголь'] },
 
-      { x: 1813, y: 1247, icon: 'icons/mine.svg',         name: 'Потерянный шанс', type: 'Шахта',
+      { x: 7196, y: 5605, icon: 'icons/mine.svg',         name: 'Потерянный шанс', type: 'Шахта',
         desc: 'Золотая шахта.',
         keys: ['руда', 'золото', 'богатство', 'копать', 'добыча'] },
 
-      { x: 889,  y: 550,  icon: 'icons/mine.svg',         name: 'Каменные холмы',  type: 'Шахта',
+      { x: 4000,  y: 3082,  icon: 'icons/mine.svg',         name: 'Каменные холмы',  type: 'Шахта',
         desc: 'Железная шахта.',
         keys: ['руда', 'железо'] },
 
-      { x: 1456, y: 490,  icon: 'icons/mine.svg',         name: 'Свистящая шахта', type: 'Шахта',
+      { x: 6097, y: 2886,  icon: 'icons/mine.svg',         name: 'Свистящая шахта', type: 'Шахта',
         desc: 'Железная шахта.',
         keys: ['руда', 'железо'] },
 
       // ================= СПАВН ЖИВОТНЫХ =================
-      { x: 967,  y: 367,  icon: 'icons/animal.svg',       name: 'Белые волки', type: 'Спавн животных',
+      { x: 5235,  y: 2599,  icon: 'icons/animal.svg',       name: 'Белые волки', type: 'Спавн животных',
         desc: 'Спавн белых волков.',
         keys: ['шкура белого волка', 'низкосортный жир', 'волчатина'] },
 
-      { x: 1221, y: 402,  icon: 'icons/animal.svg',       name: 'Белые волки', type: 'Спавн животных',
+      { x: 4349, y: 2498,  icon: 'icons/animal.svg',       name: 'Белые волки', type: 'Спавн животных',
         desc: 'Спавн белых волков.',
         keys: ['шкура белого волка', 'низкосортный жир', 'волчатина'] },
 
-      { x: 421,  y: 349,  icon: 'icons/animal.svg',       name: 'Малые пауки', type: 'Спавн животных',
+      { x: 2465,  y: 2380,  icon: 'icons/animal.svg',       name: 'Малые пауки', type: 'Спавн животных',
         desc: 'Спавн малых пауков.',
         keys: [] },
 
-      { x: 337,  y: 434,  icon: 'icons/animal.svg',       name: 'Малые пауки', type: 'Спавн животных',
+      { x: 2105,  y: 2645,  icon: 'icons/animal.svg',       name: 'Малые пауки', type: 'Спавн животных',
         desc: 'Спавн малых пауков.',
         keys: [] },
 
-      { x: 418,  y: 320,  icon: 'icons/animal.svg',       name: 'Злокрысы',    type: 'Спавн животных',
+      { x: 2463,  y: 2338,  icon: 'icons/animal.svg',       name: 'Злокрысы',    type: 'Спавн животных',
         desc: 'Спавн злокрыс.',
         keys: [] },
 
-      { x: 509,  y: 433,  icon: 'icons/animal.svg',       name: 'Волки',       type: 'Спавн животных',
+      { x: 3410,  y: 2811,  icon: 'icons/animal.svg',       name: 'Волки',       type: 'Спавн животных',
         desc: 'Спавн волков.',
         keys: ['шкура волка', 'низкосортный жир', 'волчатина'] },
 
-      { x: 440,  y: 788,  icon: 'icons/animal.svg',       name: 'Волки',       type: 'Спавн животных',
+      { x: 2736,  y: 2676,  icon: 'icons/animal.svg',       name: 'Волки',       type: 'Спавн животных',
         desc: 'Спавн волков.',
         keys: ['шкура волка', 'низкосортный жир', 'волчатина'] },
 
-      { x: 705,  y: 471,  icon: 'icons/animal.svg',       name: 'Волки',       type: 'Спавн животных',
+      { x: 2558,  y: 3933,  icon: 'icons/animal.svg',       name: 'Волки',       type: 'Спавн животных',
         desc: 'Спавн волков.',
         keys: ['шкура волка', 'низкосортный жир', 'волчатина'] },
     ];
-
-    // ============================================================
-    // 5. ПЕРЕСЧЁТ КООРДИНАТ МЕТОК
-    // ============================================================
-    var SCALE_X = W / OLD_W;
-    var SCALE_Y = H / OLD_H;
-
-    cities.forEach(function(c) {
-      c.x = Math.round(c.x * SCALE_X);
-      c.y = Math.round(c.y * SCALE_Y);
-    });
 
     // ============================================================
     // 6. ИКОНКА ПО УМОЛЧАНИЮ
@@ -641,7 +654,7 @@
     legend.addTo(map);
 
     // ============================================================
-    // 10. ЕДИНЫЙ ВИДЖЕТ: ПОИСК + ФИЛЬТР
+    // 10. ЕДИНЫЙ ВИДЖЕТ: ПОИСК + ФИЛЬТР (сворачиваемый)
     // ============================================================
     var SidebarControl = L.Control.extend({
       options: { position: 'topleft' },
@@ -650,6 +663,7 @@
 
         var html = '';
 
+        // --- Поиск ---
         html +=
           '<div class="search-section">' +
             '<input type="text" id="search-input" placeholder="🔍 Поиск..." autocomplete="off"/>' +
@@ -658,7 +672,19 @@
             '<div class="suggestions" id="suggestions"></div>' +
           '</div>';
 
-        html += '<div class="filter-section"><h4>⚙ Фильтры</h4>';
+        // --- Фильтр: сворачиваемый ---
+        html += '<div class="filter-section" id="filter-section">';
+
+        // Заголовок-кнопка
+        html +=
+          '<div class="filter-toggle" id="filter-toggle">' +
+            '<span>⚙ Фильтры</span>' +
+            '<span class="arrow">▼</span>' +
+          '</div>';
+
+        // Тело фильтра (сворачивается)
+        html += '<div class="filter-body">';
+
         allTypes.forEach(function(type) {
           var count = cities.filter(function(c) { return c.type === type; }).length;
           var sample = cities.find(function(c) { return c.type === type; });
@@ -674,7 +700,7 @@
             '</label>';
         });
 
-        // Отдельный переключатель для границ холдов
+        // Переключатель границ холдов
         html +=
           '<label style="border-top: 1px solid #8b6914; margin-top: 6px; padding-top: 8px;">' +
             '<input type="checkbox" id="toggle-holds" checked />' +
@@ -687,7 +713,9 @@
             '<button id="filter-all">Все</button>' +
             '<button id="filter-none">Ничего</button>' +
           '</div>';
-        html += '</div>';
+
+        html += '</div>'; // /filter-body
+        html += '</div>'; // /filter-section
 
         container.innerHTML = html;
 
@@ -699,6 +727,23 @@
           var suggestBox = document.getElementById('suggestions');
           var clearBtn = document.getElementById('search-clear');
           var activeIndex = -1;
+
+          // --- Сворачивание фильтра ---
+          var filterSection = document.getElementById('filter-section');
+          var filterToggle = document.getElementById('filter-toggle');
+
+          // Восстанавливаем состояние из localStorage
+          if (localStorage.getItem('filterCollapsed') === 'true') {
+            filterSection.classList.add('collapsed');
+            filterToggle.classList.add('collapsed');
+          }
+
+          filterToggle.addEventListener('click', function() {
+            filterSection.classList.toggle('collapsed');
+            filterToggle.classList.toggle('collapsed');
+            localStorage.setItem('filterCollapsed',
+              filterSection.classList.contains('collapsed'));
+          });
 
           // --- Фильтры категорий ---
           container.querySelectorAll('.filter-section input[type="checkbox"][data-type]').forEach(function(cb) {
@@ -719,24 +764,20 @@
 
           // --- Кнопки Все / Ничего ---
           document.getElementById('filter-all').addEventListener('click', function() {
-            // Категории
             container.querySelectorAll('.filter-section input[type="checkbox"][data-type]').forEach(function(cb) {
               cb.checked = true;
               cb.dispatchEvent(new Event('change'));
             });
-            // Границы холдов тоже включаем
             var holdsCb = document.getElementById('toggle-holds');
             holdsCb.checked = true;
             holdsCb.dispatchEvent(new Event('change'));
           });
 
           document.getElementById('filter-none').addEventListener('click', function() {
-            // Категории выключаем
             container.querySelectorAll('.filter-section input[type="checkbox"][data-type]').forEach(function(cb) {
               cb.checked = false;
               cb.dispatchEvent(new Event('change'));
             });
-            // Границы холдов тоже выключаем
             var holdsCb = document.getElementById('toggle-holds');
             holdsCb.checked = false;
             holdsCb.dispatchEvent(new Event('change'));
@@ -970,7 +1011,7 @@
     // ============================================================
     map.on('click', function(e) {
       var x = Math.round(e.latlng.lng);
-      var y = Math.round(H - e.latlng.y);
+      var y = Math.round(H - e.latlng.lat);
       console.log('Координаты: x = ' + x + ', y = ' + y);
     });
   </script>
